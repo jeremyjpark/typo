@@ -4,10 +4,10 @@ class Admin::CategoriesController < Admin::BaseController
   def index; redirect_to :action => 'new' ; end
   def edit; new_or_edit;  end
 
-  def new 
+  def new
     respond_to do |format|
       format.html { new_or_edit }
-      format.js { 
+      format.js {
         @category = Category.new
       }
     end
@@ -21,16 +21,28 @@ class Admin::CategoriesController < Admin::BaseController
     redirect_to :action => 'new'
   end
 
+  def create
+    @category = Category.new(params[:category])
+
+    save_category
+  end
+
   private
 
   def new_or_edit
     @categories = Category.find(:all)
-    @category = Category.find(params[:id])
-    @category.attributes = params[:category]
+    if params[:id].nil?
+      @action = '/admin/categories/edit'
+    else
+      @action = '/admin/categories/edit'
+      @id = Category.find(params[:id]).id
+    end
+    @category = Category.find(params[:id]) unless params[:id].nil?
+    @category.attributes = params[:category] unless @category.nil?
     if request.post?
       respond_to do |format|
         format.html { save_category }
-        format.js do 
+        format.js do
           @category.save
           @article = Article.new
           @article.categories << @category
@@ -43,11 +55,16 @@ class Admin::CategoriesController < Admin::BaseController
   end
 
   def save_category
+    @category ||= Category.new(params[:category])
+    begin
     if @category.save!
       flash[:notice] = _('Category was successfully saved.')
     else
       flash[:error] = _('Category could not be saved.')
     end
+    rescue
+      flash[:error] = _('Category could not be saved.')
+      end
     redirect_to :action => 'new'
   end
 
